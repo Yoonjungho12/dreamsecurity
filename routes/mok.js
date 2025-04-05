@@ -73,7 +73,7 @@ router.post('/mok_std_request', (req, res) => {
     return res.json({
       usageCode: '01005',
       serviceId: mobileOK.getServiceId(),
-      encryptReqClientInfo: '', // 이미 설정된 걸 재사용하거나 빈값 가능
+      encryptReqClientInfo: req.session.encrypted,
       serviceType: 'telcoAuth',
       retTransferType: 'MOKToken',
       returnUrl: resultUrl,
@@ -93,6 +93,7 @@ router.post('/mok_std_request', (req, res) => {
 
   const fullTxId = clientTxId + '|' + getCurrentDate();
   const encrypted = mobileOK.RSAEncrypt(fullTxId);
+  req.session.encrypted = encrypted;
 
   const payload = {
     usageCode: '01005',
