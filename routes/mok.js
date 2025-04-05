@@ -145,6 +145,15 @@ router.post('/mok_std_result', async (req, res) => {
       }
     }
 
+    // ✅ 세션 정리!
+    req.session.destroy(err => {
+      if (err) {
+        console.error('❌ 세션 제거 실패:', err);
+      } else {
+        console.log('✅ 세션 정상 제거 완료');
+      }
+    });
+
     res.json({
       errorCode: '2000',
       resultMsg: '성공',
