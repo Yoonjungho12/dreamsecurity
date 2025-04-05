@@ -18,9 +18,9 @@ try {
 }
 
 // ✅ 상수
-const clientPrefix = 'LINKUP';
+const clientPrefix = 'YEOGIDOT';
 const MOK_RESULT_REQUEST_URL = 'https://scert.mobile-ok.com/gui/service/v1/result/request';
-const resultUrl = 'http://localhost:4000/mok/mok_std_result';
+const resultUrl = 'https://www.yeogidot.com/mok/mok_std_result';
 
 // ✅ 유틸리티 함수들
 function uuid() {
