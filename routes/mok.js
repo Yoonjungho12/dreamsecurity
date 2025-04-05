@@ -115,61 +115,83 @@ router.post('/mok_std_result', async (req, res) => {
   console.log('📥 요청 바디:', req.body);
 
   try {
-    const body = req.body;
-    const decoded = decodeURIComponent(JSON.parse(body).data);
+    // 1️⃣ 클라이언트로부터 받은 암호화된 결과 해석
+    const decoded = decodeURIComponent(req.body.data); // ★ 여기 JSON.parse 제거 주의!
     const parsed = JSON.parse(decoded);
+
+    console.log("✅ 디코딩된 MOKToken 데이터:", parsed);
+
     const token = parsed.encryptMOKKeyToken;
+    if (!token) {
+      console.warn("❌ MOKToken 없음");
+      return res.status(400).send('-1|토큰 없음');
+    }
 
-    if (!token) return res.status(400).send('-1|토큰 없음');
-
+    // 2️⃣ MOK 서버에 최종 결과 요청
     const mokRes = await axios.post(MOK_RESULT_REQUEST_URL, { encryptMOKKeyToken: token });
     const encrypted = mokRes.data.encryptMOKResult;
-    if (!encrypted) return res.status(400).send('-1|암호화된 결과 없음');
 
+    if (!encrypted) {
+      console.warn("❌ MOKResult 없음");
+      return res.status(400).send('-2|암호화된 결과 없음');
+    }
+
+    // 3️⃣ 복호화
     const decryptedJson = mobileOK.getResult(encrypted);
     const decrypted = JSON.parse(decryptedJson);
 
+    console.log("✅ 복호화된 사용자 정보:", decrypted);
+
+    // 4️⃣ 거래번호 확인
     const sessionTxId = req.session.clientTxId;
     const receivedTxId = decrypted.clientTxId?.split('|')[0];
 
     if (sessionTxId !== receivedTxId) {
+      console.warn("❌ 거래번호 불일치");
       return res.status(403).send('-4|세션 불일치');
     }
 
+    // 5️⃣ 세션에서 userId 추출
     const userId = req.session.userId;
     if (!userId) {
+      console.warn("❌ 세션에 userId 없음");
       return res.status(400).json({ error: "세션에 userId 없음" });
     }
 
-    // isAdult 계산
+    // 6️⃣ 성인 여부 계산
     let isAdult = false;
     if (decrypted.userBirthday) {
       isAdult = checkIsAdult(decrypted.userBirthday);
+      console.log("🎂 생년월일:", decrypted.userBirthday, "→ 성인 여부:", isAdult);
     }
 
-    // DB 업데이트
+    // 7️⃣ Supabase에 저장
     if (isAdult) {
       const { error } = await supabase
         .from('profiles')
         .upsert({
           user_id: userId,
           is_adult: true,
-          verified_at: new Date().toISOString()
+          verified_at: new Date().toISOString(),
         });
 
       if (error) {
-        console.error('Supabase 업데이트 오류:', error);
+        console.error('❌ Supabase 업데이트 오류:', error);
+      } else {
+        console.log(`✅ [${userId}] is_adult = true 업데이트 완료`);
       }
     }
 
+    // 8️⃣ 클라이언트 응답
     res.json({
       errorCode: '2000',
       resultMsg: '성공',
       data: decrypted,
-      isAdult
+      isAdult,
     });
+
   } catch (err) {
-    console.error('❌ 결과 처리 중 오류:', err);
+    console.error('❌ 인증 결과 처리 중 오류:', err);
     res.status(500).send('-9|서버 내부 오류');
   }
 });
