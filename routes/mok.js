@@ -80,7 +80,7 @@ router.post('/mok_std_request', (req, res) => {
   const encrypted = mobileOK.RSAEncrypt(fullTxId);
 
   const payload = {
-    usageCode: '01006',
+    usageCode: '01005',
     serviceId: mobileOK.getServiceId(),
     encryptReqClientInfo: encrypted,
     serviceType: 'telcoAuth',
