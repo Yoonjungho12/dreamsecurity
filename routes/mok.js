@@ -67,13 +67,28 @@ router.post('/mok_std_request', (req, res) => {
   console.log('🔍 인증 요청 함수 실행');
   console.log('📥 요청 바디:', req.body);
 
+  // 1️⃣ 세션에 clientTxId가 있으면 재호출 → 그냥 통과시킴
+  if (req.session.clientTxId && req.session.userId) {
+    console.log('✅ 세션에 clientTxId 있음 → 재호출로 판단 → OK 응답');
+    return res.json({
+      usageCode: '01005',
+      serviceId: mobileOK.getServiceId(),
+      encryptReqClientInfo: '', // 이미 설정된 걸 재사용하거나 빈값 가능
+      serviceType: 'telcoAuth',
+      retTransferType: 'MOKToken',
+      returnUrl: resultUrl,
+      resultType: 'json',
+    });
+  }
+
+  // 2️⃣ 첫 호출 → userId 필요
   const { userId } = req.body;
   if (!userId) {
     return res.status(400).json({ error: 'userId가 필요합니다' });
   }
 
-  req.session.userId = userId;
   const clientTxId = clientPrefix + uuid();
+  req.session.userId = userId;
   req.session.clientTxId = clientTxId;
 
   const fullTxId = clientTxId + '|' + getCurrentDate();
@@ -86,7 +101,7 @@ router.post('/mok_std_request', (req, res) => {
     serviceType: 'telcoAuth',
     retTransferType: 'MOKToken',
     returnUrl: resultUrl,
-    resultType: 'json'
+    resultType: 'json',
   };
 
   console.log('📤 응답:', payload);
