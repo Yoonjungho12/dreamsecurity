@@ -135,11 +135,8 @@ router.post('/mok_std_result', async (req, res) => {
     if (isAdult) {
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: userId,
-          is_adult: true,
-          
-        });
+        .update({ is_adult: true })
+        .eq('user_id', userId);
 
       if (error) {
         console.error('❌ Supabase 업데이트 오류:', error);
