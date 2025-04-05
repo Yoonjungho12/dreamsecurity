@@ -138,7 +138,7 @@ router.post('/mok_std_result', async (req, res) => {
         .upsert({
           user_id: userId,
           is_adult: true,
-          verified_at: new Date().toISOString(),
+          
         });
 
       if (error) {
